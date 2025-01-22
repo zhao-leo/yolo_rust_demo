@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model_path = &args[1];
     let image_path = &args[2];
     let type_path = &args[3];
-    let mut output_path = "output.jpg";
+    let mut output_path = &args[2];
     let mut confidence = 0.5;
     for i in 4..args.len() {
         if args[i] == "-o" {
