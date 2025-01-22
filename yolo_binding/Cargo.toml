@@ -8,3 +8,6 @@ tch = "0.18.1"
 serde_json = "1.0"
 zip = "2.2.2"
 reqwest = { version = "0.12.12", features = ["blocking"] }
+image = "0.25.5"
+imageproc = "0.25.0"
+ab_glyph = "0.2.29"
