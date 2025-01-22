@@ -1,1 +1,1 @@
-yolo_shell yolo %*
+yolo_shell yolo_binding %*
