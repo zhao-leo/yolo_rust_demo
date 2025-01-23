@@ -1,7 +1,4 @@
-mod yolo;
-
 use std::env;
-
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
@@ -25,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     println!("模型路径: {}  图片路径: {} 输出路径: {} 置信度: {}", model_path, image_path, output_path, confidence);
-    
+    use yolo_binding::yolo;
     let image_tensor = yolo::preprocess_image(image_path)?;  //预处理图片
 
     let output = yolo::predict(model_path, image_tensor)?;  //模型预测
