@@ -7,6 +7,7 @@ use ab_glyph;
 pub fn predict(model_path: &str, input: Tensor) -> Result<Tensor, Box<dyn Error>> {
     //Tensor should be on the same device as the model [1, 3, 640, 640]
     let device = Device::cuda_if_available();
+    println!("Device: {:?}", device);
     let model = CModule::load_on_device(Path::new(model_path), device)?;
     // start inference
     let time_start = Instant::now();
