@@ -1,1 +1,1 @@
-yolo_shell yolo_binding %*
+.\core\yolo_shell .\core\yolo_binding %*

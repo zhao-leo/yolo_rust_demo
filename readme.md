@@ -10,14 +10,29 @@ PATH="\path\to\libtorch\lib"
 如果你只是想要使用该程序，你需要按以下方式组织文件：
 ```
 path:/
-    run.bat
-    yolo_binding.exe
-    yolo_shell.exe
+│  run.bat
+│  test.bat
+│
+├─core
+│      yolo_binding.exe
+│      yolo_shell.exe
+│
+├─images
+│      1.png
+│      2.png
+│      3.png
+│      4.png
+│      5.png
+│      6.png
+│      . . .
+│
+└─result
 ```
-在当前目录启动命令行并执行以下命令：
-```
-.\run path/to/model.jit path/to/picture path/to/types.json
-```
+输入`run`或者`test`会有相关提示。
+
+test.bat 对文件名称等有要求，但是可以批量推理，适合多照片推理
+run.bat 有更高的自由度，不能批量处理，适合调试
+
 ```
 PS：
 为了实现LIBTORCH环境变量的注入，我们通过yolo_shell执行yolo_binding主程序，yolo_shell会对所有输入参数进行转发，并将返回的字节流转发到主程序的std上
