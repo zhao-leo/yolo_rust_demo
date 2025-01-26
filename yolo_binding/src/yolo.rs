@@ -44,7 +44,8 @@ pub fn post_process(
     let types: Value = serde_json::from_str(&json_buffer)?;
     println!("All types loaded");
     let full_xywh = pred.slice(1, 0, 4, 1);
-    let mut picture = image::open(Path::new(image_path))?;
+    let mut picture = image::ImageReader::open(Path::new(image_path))?
+    .with_guessed_format()?.decode()?;
     println!("Input picture: {}", image_path);
     for index in 0..npreds {
         // 遍历所有预测框
