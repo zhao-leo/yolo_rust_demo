@@ -11,3 +11,4 @@ reqwest = { version = "0.12.12", features = ["blocking"] }
 image = "0.25.5"
 imageproc = "0.25.0"
 ab_glyph = "0.2.29"
+winapi = {version = "0.3.9", features = ["libloaderapi"]}

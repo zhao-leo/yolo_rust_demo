@@ -1,30 +1,60 @@
-use image::{self, DynamicImage, GenericImageView, Rgba};
-use imageproc::drawing::{draw_line_segment_mut,draw_text_mut};
-use serde_json::Value;
-use std::{error::Error, fs, path::Path, time::Instant};
-use tch::{CModule, Device, Tensor};
 use ab_glyph;
+use image::{self, DynamicImage, GenericImageView, Rgba};
+use imageproc::drawing::{draw_line_segment_mut, draw_text_mut};
+use serde_json::Value;
+use std::{
+    env,
+    error::Error,
+    ffi::{c_char, CString},
+    fs,
+    path::Path,
+    str::FromStr,
+    time::Instant,
+};
+use tch::{CModule, Device, Tensor};
+use winapi::um::libloaderapi::LoadLibraryA;
+
 pub fn predict(model_path: &str, input: Tensor) -> Result<Tensor, Box<dyn Error>> {
+    // 主推理阶段
+
+    // set up torch_cuda.dll
+    let mut libtorch_path = env::var("LIBTORCH").unwrap();
+    libtorch_path.push_str(r"\lib\torch_cuda.dll");
+    if Path::new(&libtorch_path).exists() {
+        let path = CString::from_str(&libtorch_path).unwrap();
+        unsafe {
+            // 引入torch_cuda.dll
+            LoadLibraryA(path.as_ptr() as *const c_char);
+        }
+    } else {
+        println!("No torch_cuda.dll found in LIBTORCH, prediction will use CPU");
+    }
     //Tensor should be on the same device as the model [1, 3, 640, 640]
+    //load device
     let device = Device::cuda_if_available();
     println!("Device: {:?}", device);
-    let model = CModule::load_on_device(Path::new(model_path), device)?;
+    //load model and tensor input
+    let input = input.to_device(device);
+    let model = CModule::load_on_device(Path::new(model_path), device).expect("load model failed");
+    println!("Model loaded");
     // start inference
     let time_start = Instant::now();
-    let output = model.forward_ts(&[input])?;
+    let output = model.forward_ts(&[input]).expect("forward failed");
     let time_end = Instant::now();
     println!("Inference time: {:?}", time_end.duration_since(time_start));
     Ok(output)
 }
 pub fn preprocess_image(image_path: &str) -> Result<Tensor, Box<dyn Error>> {
-    let origin_image = tch::vision::image::load(image_path).unwrap();
+    let origin_image = tch::vision::image::load(image_path).expect("load image failed");
     println!("Origin Image size: {:?}", origin_image);
+
     let image = tch::vision::image::resize(&origin_image, 640, 640)
         .unwrap()
         .unsqueeze(0)
         .to_kind(tch::Kind::Float)
         / 255.;
     println!("Resized Image size: {:?}", image);
+
     Ok(image)
 }
 pub fn post_process(
@@ -45,7 +75,8 @@ pub fn post_process(
     println!("All types loaded");
     let full_xywh = pred.slice(1, 0, 4, 1);
     let mut picture = image::ImageReader::open(Path::new(image_path))?
-    .with_guessed_format()?.decode()?;
+        .with_guessed_format()?
+        .decode()?;
     println!("Input picture: {}", image_path);
     for index in 0..npreds {
         // 遍历所有预测框
@@ -63,16 +94,24 @@ pub fn post_process(
             let class_index = max_conf_index - 4;
             let class_name = &types[class_index.to_string()];
             print!("max_conf: {:.4}, class_name: {} ", max_conf, class_name);
-            image_process(&mut picture, full_xywh.slice(0, index, index + 1, 1),class_name.as_str().unwrap())?;
+            image_process(
+                &mut picture,
+                full_xywh.slice(0, index, index + 1, 1),
+                class_name.as_str().unwrap(),
+            )?;
         }
     }
-    if let Ok(_) = picture.save(Path::new(output_path)){
+    if let Ok(_) = picture.save(Path::new(output_path)) {
         println!("Output picture: {}", output_path);
     }
     Ok(())
 }
 
-fn image_process(picture: &mut DynamicImage, xywh: Tensor,type_name: &str) -> Result<(), Box<dyn Error>> {
+fn image_process(
+    picture: &mut DynamicImage,
+    xywh: Tensor,
+    type_name: &str,
+) -> Result<(), Box<dyn Error>> {
     //x,y,w,h is based on 640*640 image size
     let (mut x, mut y, mut w, mut h) = (
         xywh.double_value(&[0, 0]),
@@ -81,7 +120,7 @@ fn image_process(picture: &mut DynamicImage, xywh: Tensor,type_name: &str) -> Re
         xywh.double_value(&[0, 3]),
     );
     println!("x: {:.2}, y: {:.2}, w: {:.2}, h: {:.2}", x, y, w, h);
-    (x, y, w, h) = (x / 640., y / 640., w / 640., h / 640.);  //Normalize to 1
+    (x, y, w, h) = (x / 640., y / 640., w / 640., h / 640.); //Normalize to 1
     let (width, height) = picture.dimensions();
     (x, y, w, h) = (
         x * width as f64,
