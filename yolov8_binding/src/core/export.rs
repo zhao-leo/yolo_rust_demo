@@ -1,5 +1,5 @@
-use tch::Tensor;
 use std::error::Error;
+use tch::Tensor;
 fn filter_confidence_async(
     tensor: &Tensor,
     confidence: f64,
@@ -7,7 +7,6 @@ fn filter_confidence_async(
     //Tensor [84, 8400]
     let pred = tensor.transpose(1, 0); //Tensor [8400, 84]
     let (npreds, pred_size) = pred.size2().unwrap();
-    println!("npreds: {:?}, pred_size: {:?}", npreds, pred_size);
     let full_xywh = pred.slice(1, 0, 4, 1); //Tensor [8400, 4]
     let mut filtered_results = Vec::new();
     for index in 0..npreds {
@@ -17,7 +16,6 @@ fn filter_confidence_async(
             .narrow(0, 4, pred_size - 4)
             .argmax(0, true)
             .double_value(&[0]) as i64;
-        //println!("max_conf_index: {:?}", max_conf_index);
         let max_conf = pred.double_value(&[max_conf_index + 4]);
         if max_conf > confidence {
             let class_index = max_conf_index;
@@ -29,7 +27,6 @@ fn filter_confidence_async(
                 class_index,
                 max_conf,
             ));
-            // println!("filtered_results: {:#?}", filtered_results);
         }
     }
     filtered_results
@@ -92,7 +89,7 @@ fn nms(
         }
     }
     // 收集未抑制的检测框
-    boxes
+    boxes //
         .into_iter()
         .enumerate()
         .filter(|(i, _)| !suppressed[*i])

@@ -1,13 +1,18 @@
 use super::{YOLODevice, YOLO};
 use core::panic;
-use std::{
-    env, error::Error, ffi::{c_char, CString}, path::Path, str::FromStr,collections::HashMap
-};
 use serde_json::Value;
-use tch::{CModule, Device,vision, Tensor};
-use winapi::um::libloaderapi::LoadLibraryA;
 use std::fs::File;
 use std::io::{BufReader, Read, Write};
+use std::{
+    collections::HashMap,
+    env,
+    error::Error,
+    ffi::{c_char, CString},
+    path::Path,
+    str::FromStr,
+};
+use tch::{vision, CModule, Device, Tensor};
+use winapi::um::libloaderapi::LoadLibraryA;
 
 pub fn load_model_from_path(model_path: &str, cuda: bool) -> Result<YOLO, Box<dyn Error>> {
     let device = if cuda == true {
@@ -27,7 +32,7 @@ pub fn load_model_from_path(model_path: &str, cuda: bool) -> Result<YOLO, Box<dy
         }
     } else {
         Device::Cpu
-    };  // device choiced
+    }; // device choiced
     println!("Module Device: {:?}", device);
     let model = CModule::load_on_device(Path::new(model_path), device).expect("load model failed");
     println!("Model loaded");
@@ -35,7 +40,7 @@ pub fn load_model_from_path(model_path: &str, cuda: bool) -> Result<YOLO, Box<dy
         Device::Cuda(_) => YOLODevice::Gpu,
         Device::Cpu => YOLODevice::Gpu,
         _ => panic!("Other devices currently are not supported"),
-    };  // model choiced
+    }; // model choiced
 
     let mut output_bytes: Vec<u8> = Vec::new();
 
@@ -72,16 +77,18 @@ pub fn load_model_from_path(model_path: &str, cuda: bool) -> Result<YOLO, Box<dy
         } else {
             end_index = 0;
         }
-    };
+    }
 
     let output_bytes = output_bytes[..output_bytes.len() - 4].to_vec();
-    //fs::write("output_bytes", output_bytes)?;
     let v: Value = serde_json::from_slice(&output_bytes)?;
     let types = v["names"].as_object().unwrap();
     println!("{:?} Types loaded", types.len());
     let mut names_map: HashMap<i64, String> = HashMap::new();
     for (key, value) in types.iter() {
-        names_map.insert(key.trim().parse().unwrap(), value.as_str().unwrap().to_string());
+        names_map.insert(
+            key.trim().parse().unwrap(),
+            value.as_str().unwrap().to_string(),
+        );
     }
 
     Ok(YOLO {
