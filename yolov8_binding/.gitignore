@@ -3,3 +3,8 @@ types.json
 yolov8s.jit
 input.*
 output.*
+*.jit
+*.png
+images
+tmp.*
+temp.*
