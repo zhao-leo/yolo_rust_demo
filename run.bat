@@ -1,1 +1,0 @@
-.\core\yolo_shell .\core\yolo_binding %*
