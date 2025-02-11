@@ -82,7 +82,7 @@ fn dll_inject() {
             } else {
                 println!("libtorch directory not found in current directory");
                 println!("Downloading libtorch-2.5.1 cpu version...");
-                let download_url = "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.5.1%2Bcpu.zip";
+                let download_url = "https://download.pytorch.org/libtorch/cpu/libtorch-win-shared-with-deps-2.6.0%2Bcpu.zip";
                 match download_and_extract(download_url, "./") {
                     Ok(_) => {
                         println!("Downloaded and extracted libtorch successfully");
