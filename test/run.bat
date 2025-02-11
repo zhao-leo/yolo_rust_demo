@@ -1,0 +1,1 @@
+.\core\yolo_shell .\core\yolo_cli %*
